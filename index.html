@@ -200,7 +200,8 @@ const mName = m => { const [y, mm] = m.split('-'); return HEB_M[+mm - 1] + ' ' +
 const mShort = m => HEB_M[+m.split('-')[1] - 1].slice(0, 3);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmtDate = d => d ? d.split('-').reverse().join('/') : '';
-const spend = p => p.category !== DON;
+const spend = p => p.category !== DON && p.refund !== 'other';
+const counted = p => p.refund !== 'other'; // החזר על קנייה מחודש אחר לא מקוזז
 const sum = (arr, f) => arr.reduce((a, x) => a + (f ? f(x) : x), 0);
 const groupSum = (arr, key, val) => { const m = {}; arr.forEach(x => { const k = key(x) || 'אחר'; m[k] = (m[k] || 0) + val(x); }); return Object.entries(m).sort((a, b) => b[1] - a[1]); };
 
@@ -353,7 +354,7 @@ function purchaseRow(p) {
     : '<div class="it"><div class="q">אין פירוט מוצרים לרכישה הזו</div></div>';
   const link = p.link && /^https?:/.test(p.link) ? '<div class="it"><a href="' + esc(p.link) + '" target="_blank">למקור ←</a></div>' : '';
   return '<div class="p"><div class="top"><div><div class="m">' + esc(p.merchant) +
-    (p.category === DON ? '<span class="tag">תרומה</span>' : '') + (p.review ? '<span class="tag warn">לבדיקה</span>' : '') +
+    (p.category === DON ? '<span class="tag">תרומה</span>' : '') + (p.review ? '<span class="tag warn">לבדיקה</span>' : '') + (p.refund === 'other' ? '<span class="tag warn">החזר – לא מקוזז' + (p.refundOf ? ' (קנייה מ־' + fmtDate(p.refundOf) + ')' : '') + '</span>' : '') +
     '</div><div class="meta">' + fmtDate(p.date) + ' · ' + esc(p.category) + (its.length ? ' · ' + its.length + ' מוצרים' : '') + '</div></div>' +
     '<div class="m">' + ils2(p.total) + '</div></div><div class="items">' + itemsHtml + link + '</div></div>';
 }
@@ -363,7 +364,7 @@ function renderDrill() {
   let ps = D.purchases.filter(p => p.month === M);
   if (drill.cat) ps = ps.filter(p => (p.category || 'אחר') === drill.cat);
   if (drill.merchant) ps = ps.filter(p => (p.merchant || 'אחר') === drill.merchant);
-  const tot = sum(ps, p => p.total);
+  const tot = sum(ps.filter(counted), p => p.total);
   $('dtitle').textContent = [drill.cat, drill.merchant].filter(Boolean).join(' › ');
   $('dlabel').textContent = mName(M);
   $('dtotal').textContent = ils(tot);
@@ -373,7 +374,7 @@ function renderDrill() {
   const showMerch = !drill.merchant;
   $('dmerch-card').style.display = showMerch ? '' : 'none';
   if (showMerch) {
-    const ms = groupSum(ps, p => p.merchant, p => p.total);
+    const ms = groupSum(ps.filter(counted), p => p.merchant, p => p.total);
     $('dmerch').innerHTML = ms.map(([c, v]) => row(c, v, tot, 'var(--c2)', 'merchant')).join('') || '<div class="empty">—</div>';
     document.querySelectorAll('#dmerch .r').forEach(r => r.onclick = () => { drill.merchant = r.dataset.n; renderDrill(); window.scrollTo(0, 0); });
   }
