@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="הוצאות">
+<meta name="theme-color" content="#4f6cf7">
+<title>ההוצאות שלנו</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%234f6cf7'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='Arial'%3E%E2%82%AA%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#f5f6fa; --card:#ffffff; --ink:#1b2133; --muted:#7a8296; --line:#eceef3;
+    --brand:#4f6cf7; --brand-soft:#eef1ff; --good:#1fa971; --bad:#e5484d; --warn:#f5a524;
+    --c1:#4f6cf7; --c2:#22b8a6; --c3:#f5a524; --c4:#e5484d; --c5:#9b5cf6; --c6:#ec4899; --c7:#0ea5e9; --c8:#84cc16;
+    --radius:18px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Rubik","Assistant","Segoe UI",Arial,sans-serif;font-size:15px}
+  .wrap{max-width:720px;margin:0 auto;padding:16px 14px 80px}
+  header{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 14px}
+  h1{font-size:22px;margin:0;font-weight:700}
+  .sub{color:var(--muted);font-size:13px}
+  .month{display:flex;align-items:center;gap:6px;background:var(--card);border-radius:999px;padding:4px;box-shadow:0 1px 3px rgba(20,30,60,.06)}
+  .month button{border:0;background:var(--brand-soft);color:var(--brand);width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer}
+  .month button:disabled{opacity:.35}
+  .month span{min-width:96px;text-align:center;font-weight:600}
+  .card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(20,30,60,.06)}
+  .card h2{font-size:16px;margin:0 0 12px;font-weight:600;display:flex;justify-content:space-between;align-items:baseline}
+  .card h2 small{color:var(--muted);font-weight:400;font-size:12px}
+  .hero{background:linear-gradient(135deg,#4f6cf7,#7b5cf6);color:#fff}
+  .hero .label{opacity:.85;font-size:13px}
+  .hero .big{font-size:34px;font-weight:700;margin:4px 0 6px;letter-spacing:-.5px}
+  .hero .row{display:flex;gap:10px;flex-wrap:wrap;font-size:13px}
+  .pill{background:rgba(255,255,255,.18);border-radius:999px;padding:4px 10px}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .kpi{background:var(--card);border-radius:14px;padding:12px;box-shadow:0 1px 3px rgba(20,30,60,.06)}
+  .kpi .v{font-size:18px;font-weight:700}
+  .kpi .l{font-size:12px;color:var(--muted)}
+  /* months chart */
+  .bars{display:flex;align-items:flex-end;gap:6px;height:150px;padding-top:8px}
+  .bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;height:100%;justify-content:flex-end}
+  .bar i{display:block;width:100%;max-width:34px;border-radius:8px 8px 4px 4px;background:#d9defc;transition:.2s}
+  .bar.on i{background:var(--brand)}
+  .bar em{font-style:normal;font-size:10px;color:var(--muted)}
+  /* category rows */
+  .rows .r{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
+  .rows .r:last-child{border-bottom:0}
+  .rows .name{display:flex;align-items:center;gap:8px;font-weight:500}
+  .dot{width:10px;height:10px;border-radius:50%;flex:none}
+  .rows .amt{font-weight:600}
+  .track{grid-column:1/-1;height:6px;background:var(--line);border-radius:999px;overflow:hidden}
+  .track b{display:block;height:100%;border-radius:999px}
+  .pct{color:var(--muted);font-size:12px;font-weight:400;margin-inline-start:6px}
+  /* purchases list */
+  .p{border-bottom:1px solid var(--line);padding:10px 0}
+  .p:last-child{border-bottom:0}
+  .p .top{display:flex;justify-content:space-between;gap:10px;cursor:pointer}
+  .p .m{font-weight:600}
+  .p .meta{font-size:12px;color:var(--muted);margin-top:2px}
+  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--brand-soft);color:var(--brand);margin-inline-start:6px}
+  .tag.warn{background:#fff4e0;color:#b26b00}
+  .items{display:none;margin-top:8px;background:#fafbfd;border-radius:12px;padding:6px 10px}
+  .p.open .items{display:block}
+  .it{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:5px 0;border-bottom:1px dashed var(--line)}
+  .it:last-child{border-bottom:0}
+  .it .q{color:var(--muted);font-size:12px}
+  /* search */
+  .search{display:flex;gap:8px}
+  .search input{flex:1;border:1px solid var(--line);background:#fafbfd;border-radius:12px;padding:12px 14px;font-size:16px;font-family:inherit}
+  .search input:focus{outline:2px solid var(--brand-soft);border-color:var(--brand)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 2px}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer}
+  .chip.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .res-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+  .res-sum div{background:var(--brand-soft);border-radius:12px;padding:10px;text-align:center}
+  .res-sum b{display:block;font-size:18px}
+  .res-sum span{font-size:12px;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  td,th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:right}
+  th{color:var(--muted);font-weight:500;font-size:12px}
+  td.n{white-space:nowrap}
+  .empty{color:var(--muted);text-align:center;padding:16px 0;font-size:14px}
+  .more{display:block;width:100%;margin-top:8px;border:0;background:var(--brand-soft);color:var(--brand);border-radius:12px;padding:10px;font-family:inherit;font-size:14px;cursor:pointer}
+  .don{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .don:last-child{border-bottom:0}
+  a{color:var(--brand);text-decoration:none}
+  .foot{text-align:center;color:var(--muted);font-size:12px;margin-top:18px}
+  .tabs{position:fixed;bottom:0;inset-inline:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 0 calc(8px + env(safe-area-inset-bottom))}
+  .tabs button{border:0;background:none;font-family:inherit;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+  .tabs button span{font-size:20px}
+  .tabs button.on{color:var(--brand);font-weight:600}
+  .view{display:none}.view.on{display:block}
+  .crumb{display:flex;align-items:center;gap:8px;margin:0 2px 12px;flex-wrap:wrap}
+  .crumb button{border:0;background:var(--card);box-shadow:0 1px 3px rgba(20,30,60,.08);border-radius:999px;padding:8px 14px;font-family:inherit;font-size:14px;cursor:pointer;color:var(--brand)}
+  .crumb b{font-size:17px}
+  .r .chev{color:var(--muted);margin-inline-start:4px}
+  .refresh{font-size:11px;color:var(--muted)}
+  .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;color:var(--muted);gap:12px}
+  .spin{width:34px;height:34px;border:3px solid var(--brand-soft);border-top-color:var(--brand);border-radius:50%;animation:s 1s linear infinite}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .login{max-width:340px;margin:18vh auto 0;text-align:center}
+  .login h1{margin-bottom:6px}
+  .login input{width:100%;border:1px solid var(--line);background:#fff;border-radius:14px;padding:14px;font-size:16px;font-family:inherit;margin:18px 0 10px;text-align:center}
+  .login button{width:100%;border:0;background:var(--brand);color:#fff;border-radius:14px;padding:14px;font-size:16px;font-family:inherit;cursor:pointer}
+  .login .err{color:var(--bad);font-size:13px;min-height:18px;margin-top:8px}
+  .owners{display:flex;gap:6px;margin:0 2px 12px}
+  .owners .chip{flex:1;text-align:center}
+  body{padding-top:env(safe-area-inset-top)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="login" class="login" style="display:none">
+    <h1>ההוצאות שלנו</h1><div class="sub">כניסה עם סיסמה</div>
+    <form id="lform"><input id="pw" type="password" autocomplete="current-password" placeholder="סיסמה"><button>כניסה</button></form>
+    <div class="err" id="lerr"></div>
+  </div>
+  <div id="loading" class="loading"><div class="spin"></div>טוען נתונים…</div>
+
+  <div id="app" style="display:none">
+    <header>
+      <div><h1>ההוצאות שלנו</h1><div class="sub" id="updated"></div></div>
+      <div class="month"><button id="prev">›</button><span id="mlabel"></span><button id="next">‹</button></div>
+    </header>
+
+    <div class="owners" id="owners"><span class="chip on" data-o="">כולם</span><span class="chip" data-o="זיו">זיו</span><span class="chip" data-o="רננה">רננה</span></div>
+
+    <!-- סקירה -->
+    <section class="view on" id="v-home">
+      <div class="card hero">
+        <div class="label">סה״כ הוצאות בחודש</div>
+        <div class="big" id="mtotal"></div>
+        <div class="row" id="mcompare"></div>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><div class="v" id="k-count"></div><div class="l">רכישות</div></div>
+        <div class="kpi"><div class="v" id="k-avg"></div><div class="l">ממוצע לרכישה</div></div>
+        <div class="kpi"><div class="v" id="k-year"></div><div class="l">מתחילת השנה</div></div>
+      </div>
+      <div class="card"><h2>12 החודשים האחרונים <small>לחיצה על עמודה בוחרת חודש</small></h2><div class="bars" id="bars"></div></div>
+      <div class="card"><h2>לפי קטגוריה <small>לחיצה לפירוט</small></h2><div class="rows" id="cats"></div></div>
+      <div class="card"><h2>איפה הוצאתי הכי הרבה <small>לחיצה לפירוט</small></h2><div class="rows" id="merch"></div></div>
+    </section>
+
+    <!-- פירוט: קטגוריה → עסקים → רכישות -->
+    <section class="view" id="v-drill">
+      <div class="crumb"><button id="back">→ חזרה</button><b id="dtitle"></b></div>
+      <div class="card hero"><div class="label" id="dlabel"></div><div class="big" id="dtotal"></div><div class="row" id="dmeta"></div></div>
+      <div class="card" id="dmerch-card"><h2>לפי עסק <small>לחיצה לפירוט</small></h2><div class="rows" id="dmerch"></div></div>
+      <div class="card"><h2>רכישות <small>לחיצה פותחת מוצרים</small></h2><div id="dlistp"></div></div>
+    </section>
+
+    <!-- רכישות -->
+    <section class="view" id="v-list">
+      <div class="card"><h2><span id="list-title">רכישות החודש</span><small>לחיצה פותחת פירוט</small></h2><div id="plist"></div></div>
+    </section>
+
+    <!-- חיפוש מוצר -->
+    <section class="view" id="v-search">
+      <div class="card">
+        <h2>כמה קניתי…?</h2>
+        <div class="search"><input id="q" placeholder="למשל: ביצים, חלב, מכנסיים" autocomplete="off"></div>
+        <div class="chips" id="who"></div>
+        <div class="chips" id="years"></div>
+        <div id="sres"></div>
+      </div>
+      <div class="card"><h2>המוצרים שאני הכי קונה</h2><div class="chips" id="topitems"></div></div>
+    </section>
+
+    <!-- תרומות -->
+    <section class="view" id="v-don">
+      <div class="card"><h2>תרומות לפי שנה <small id="dfolder"></small></h2><div id="dyears"></div></div>
+      <div class="card"><h2>כל הקבלות</h2><div id="dlist"></div></div>
+    </section>
+
+    <div class="foot">הנתונים נאספים מהמייל ומקבלות ב-SMS · <a id="sheet" target="_blank">פתיחת הגיליון</a> · <a href="#" id="logout">יציאה</a></div>
+  </div>
+</div>
+
+<nav class="tabs" id="tabs" style="display:none">
+  <button class="on" data-v="home"><span>◔</span>סקירה</button>
+  <button data-v="list"><span>☰</span>רכישות</button>
+  <button data-v="search"><span>⌕</span>חיפוש מוצר</button>
+  <button data-v="don"><span>♡</span>תרומות</button>
+</nav>
+
+<script>
+const HEB_M = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const COLORS = ['var(--c1)','var(--c2)','var(--c3)','var(--c4)','var(--c5)','var(--c6)','var(--c7)','var(--c8)'];
+const DON = 'תרומה';
+let D, months = [], cur = 0, who = '', year = '';
+
+const $ = id => document.getElementById(id);
+const ils = n => '₪' + Math.round(n).toLocaleString('he-IL');
+const ils2 = n => '₪' + (Math.round(n * 100) / 100).toLocaleString('he-IL', {minimumFractionDigits: 0, maximumFractionDigits: 2});
+const mName = m => { const [y, mm] = m.split('-'); return HEB_M[+mm - 1] + ' ' + y; };
+const mShort = m => HEB_M[+m.split('-')[1] - 1].slice(0, 3);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtDate = d => d ? d.split('-').reverse().join('/') : '';
+const spend = p => p.category !== DON;
+const sum = (arr, f) => arr.reduce((a, x) => a + (f ? f(x) : x), 0);
+const groupSum = (arr, key, val) => { const m = {}; arr.forEach(x => { const k = key(x) || 'אחר'; m[k] = (m[k] || 0) + val(x); }); return Object.entries(m).sort((a, b) => b[1] - a[1]); };
+
+// מהיר: מציגים מיד את הנתונים מהביקור הקודם (שמורים בטלפון), ומרעננים ברקע
+let started = false, ITEMS_BY = {};
+function load(json, fromCache) {
+  try { D = JSON.parse(json); } catch (e) { return false; }
+  ITEMS_BY = {}; D.items.forEach(i => (ITEMS_BY[i.pid] = ITEMS_BY[i.pid] || []).push(i));
+  if (!started) { started = true; init(); } else { rerender(); }
+  $('updated').textContent = (fromCache ? 'מתעדכן… · ' : 'עודכן ') + new Date(D.updated).toLocaleString('he-IL', {day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit'});
+  return true;
+}
+const API = 'https://dsolzfolmpfkthgmtjph.supabase.co/functions/v1/expenses';
+const LS = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const LSset = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
+let FULL = null, owner = LS('exp_owner') || '';
+function applyOwner() {
+  if (!FULL) return;
+  const ps = owner ? FULL.purchases.filter(p => (p.owner || 'זיו') === owner) : FULL.purchases;
+  const ids = new Set(ps.map(p => p.id));
+  D = Object.assign({}, FULL, { purchases: ps, items: owner ? FULL.items.filter(i => ids.has(i.pid)) : FULL.items });
+  ITEMS_BY = {}; D.items.forEach(i => (ITEMS_BY[i.pid] = ITEMS_BY[i.pid] || []).push(i));
+}
+function load(json, fromCache) {
+  try { FULL = typeof json === 'string' ? JSON.parse(json) : json; } catch (e) { return false; }
+  applyOwner();
+  if (!started) { started = true; init(); } else { rerender(); }
+  $('updated').textContent = (fromCache ? 'מתעדכן… · ' : 'עודכן ') + new Date(FULL.updated).toLocaleString('he-IL', {day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit'});
+  return true;
+}
+function showLogin(msg) {
+  $('loading').style.display = 'none'; $('app').style.display = 'none'; $('tabs').style.display = 'none';
+  $('login').style.display = ''; $('lerr').textContent = msg || ''; $('pw').focus();
+}
+async function fetchData() {
+  const pw = LS('exp_pw');
+  if (!pw) { if (!started) showLogin(); return; }
+  try {
+    const since = LS('exp_ver');
+    const r = await fetch(API + (since ? '?since=' + encodeURIComponent(since) : ''), { headers: { 'x-password': pw }, cache: 'no-store' });
+    if (r.status === 401) { LSset('exp_pw', null); started ? location.reload() : showLogin('סיסמה שגויה'); return; }
+    const j = await r.json();
+    if (j.same) { $('updated').textContent = 'עודכן ' + new Date(FULL.updated).toLocaleString('he-IL', {day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit'}); return; }
+    if (j.empty) { if (!started) $('loading').innerHTML = '<div>עדיין אין נתונים</div>'; return; }
+    LSset('exp_data', JSON.stringify(j.data)); LSset('exp_ver', j.updated_at);
+    load(j.data, false);
+  } catch (e) {
+    if (!started) $('loading').innerHTML = '<div>לא הצלחתי לטעון את הנתונים</div><div class="sub">' + esc(e.message) + '</div>';
+    else $('updated').textContent = 'אין חיבור · מוצג מהמכשיר';
+  }
+}
+$('lform').onsubmit = e => { e.preventDefault(); const v = $('pw').value.trim(); if (!v) return; LSset('exp_pw', v); LSset('exp_ver', null); $('login').style.display = 'none'; $('loading').style.display = ''; fetchData(); };
+$('logout').onclick = e => { e.preventDefault(); ['exp_pw', 'exp_data', 'exp_ver'].forEach(k => LSset(k, null)); location.reload(); };
+{ const c = LS('exp_data'); if (c && LS('exp_pw')) load(c, true); else LSset('exp_ver', null); }
+fetchData();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') fetchData(); });
+
+let drill = null; // {cat, merchant}
+function rerender() {
+  const M = months[cur];
+  months = []; buildMonths(); cur = Math.max(0, months.indexOf(M)); if (cur < 0) cur = months.length - 1;
+  setupSearch(); renderDonations(); render(); if (drill) renderDrill();
+}
+
+function init() {
+  buildMonths();
+  cur = months.length - 1;
+  $('back').onclick = () => { if (drill && drill.merchant && drill.cat) { drill.merchant = null; renderDrill(); } else { drill = null; show('home'); } };
+  $('sheet').href = D.sheetUrl;
+  document.querySelectorAll('#owners .chip').forEach(c => c.classList.toggle('on', c.dataset.o === owner));
+  $('owners').onclick = e => { const c = e.target.closest('.chip'); if (!c) return; owner = c.dataset.o; LSset('exp_owner', owner);
+    document.querySelectorAll('#owners .chip').forEach(x => x.classList.toggle('on', x === c)); applyOwner(); rerender(); };
+  $('prev').onclick = () => { if (cur > 0) { cur--; render(); if (drill) renderDrill(); } };
+  $('next').onclick = () => { if (cur < months.length - 1) { cur++; render(); if (drill) renderDrill(); } };
+  document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => show(b.dataset.v));
+  setupSearch(); renderDonations();
+  $('loading').style.display = 'none'; $('app').style.display = ''; $('tabs').style.display = '';
+  render();
+}
+
+function buildMonths() {
+  const now = new Date();
+  const thisM = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  const set = new Set(D.purchases.map(p => p.month).filter(Boolean)); set.add(thisM);
+  const last = [...set].sort().pop();
+  let [y, m] = last.split('-').map(Number);
+  for (let i = 0; i < 12; i++) { months.unshift(y + '-' + String(m).padStart(2, '0')); if (--m === 0) { m = 12; y--; } }
+}
+
+function show(v) {
+  document.querySelectorAll('.view').forEach(x => x.classList.toggle('on', x.id === 'v-' + v));
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  window.scrollTo(0, 0);
+}
+
+function render() {
+  const M = months[cur];
+  $('mlabel').textContent = mName(M);
+  $('prev').disabled = cur === 0; $('next').disabled = cur === months.length - 1;
+  const ps = D.purchases.filter(p => p.month === M && spend(p));
+  const tot = sum(ps, p => p.total);
+  $('mtotal').textContent = ils(tot);
+  const prevM = months[cur - 1];
+  const prevTot = prevM ? sum(D.purchases.filter(p => p.month === prevM && spend(p)), p => p.total) : 0;
+  let cmp = '';
+  if (prevTot > 0) { const diff = (tot - prevTot) / prevTot * 100; cmp += '<span class="pill">' + (diff >= 0 ? '▲ ' : '▼ ') + Math.abs(Math.round(diff)) + '% מ' + HEB_M[+prevM.split('-')[1] - 1] + '</span>'; }
+  const rev = ps.filter(p => p.review).length;
+  if (rev) cmp += '<span class="pill">' + rev + ' לבדיקה</span>';
+  $('mcompare').innerHTML = cmp || '<span class="pill">' + ps.length + ' רכישות</span>';
+  $('k-count').textContent = ps.length;
+  $('k-avg').textContent = ps.length ? ils(tot / ps.length) : '—';
+  const yr = M.slice(0, 4);
+  $('k-year').textContent = ils(sum(D.purchases.filter(p => p.month.startsWith(yr) && p.month <= M && spend(p)), p => p.total));
+
+  // עמודות חודשים
+  const totals = months.map(mm => sum(D.purchases.filter(p => p.month === mm && spend(p)), p => p.total));
+  const mx = Math.max(1, ...totals);
+  $('bars').innerHTML = months.map((mm, i) =>
+    '<div class="bar' + (i === cur ? ' on' : '') + '" data-i="' + i + '" title="' + ils(totals[i]) + '"><i style="height:' + Math.max(3, totals[i] / mx * 120) + 'px"></i><em>' + mShort(mm) + '</em></div>').join('');
+  document.querySelectorAll('.bar').forEach(b => b.onclick = () => { cur = +b.dataset.i; render(); });
+
+  // קטגוריות
+  const cats = groupSum(ps, p => p.category, p => p.total);
+  $('cats').innerHTML = cats.length ? cats.map(([c, v], i) => row(c, v, tot, COLORS[i % COLORS.length], 'cat')).join('') : '<div class="empty">אין רכישות בחודש הזה</div>';
+  const merch = groupSum(ps, p => p.merchant, p => p.total).slice(0, 8);
+  $('merch').innerHTML = merch.length ? merch.map(([c, v]) => row(c, v, tot, 'var(--c2)', 'merchant')).join('') : '<div class="empty">—</div>';
+  document.querySelectorAll('#cats .r, #merch .r').forEach(r => r.onclick = () => {
+    drill = r.dataset.k === 'cat' ? {cat: r.dataset.n, merchant: null} : {cat: null, merchant: r.dataset.n};
+    renderDrill(); show('drill');
+  });
+
+  // רשימת רכישות
+  $('list-title').textContent = 'רכישות ' + mName(M);
+  const all = D.purchases.filter(p => p.month === M).sort((a, b) => b.date.localeCompare(a.date));
+  $('plist').innerHTML = all.length ? all.map(purchaseRow).join('') : '<div class="empty">אין רכישות בחודש הזה</div>';
+  document.querySelectorAll('#plist .top').forEach(t => t.onclick = () => t.parentElement.classList.toggle('open'));
+}
+
+function row(name, val, tot, color, kind) {
+  const pct = tot ? Math.round(val / tot * 100) : 0;
+  return '<div class="r" data-k="' + (kind || '') + '" data-n="' + esc(name) + '"><div class="name"><span class="dot" style="background:' + color + '"></span>' + esc(name) + '</div>' +
+    '<div class="amt">' + ils(val) + '<span class="pct">' + pct + '%</span>' + (kind ? '<span class="chev">‹</span>' : '') + '</div>' +
+    '<div class="track"><b style="width:' + pct + '%;background:' + color + '"></b></div></div>';
+}
+
+function purchaseRow(p) {
+  const its = ITEMS_BY[p.id] || [];
+  const itemsHtml = its.length ? its.map(i =>
+    '<div class="it"><div>' + esc(i.name) + ' <span class="q">' + (i.unit === 'ק״ג' ? i.qty + ' ק״ג' : '×' + i.qty) + '</span></div><div>' + ils2(i.price) + '</div></div>').join('')
+    : '<div class="it"><div class="q">אין פירוט מוצרים לרכישה הזו</div></div>';
+  const link = p.link && /^https?:/.test(p.link) ? '<div class="it"><a href="' + esc(p.link) + '" target="_blank">למקור ←</a></div>' : '';
+  return '<div class="p"><div class="top"><div><div class="m">' + esc(p.merchant) +
+    (p.category === DON ? '<span class="tag">תרומה</span>' : '') + (p.review ? '<span class="tag warn">לבדיקה</span>' : '') +
+    '</div><div class="meta">' + fmtDate(p.date) + ' · ' + esc(p.category) + (its.length ? ' · ' + its.length + ' מוצרים' : '') + '</div></div>' +
+    '<div class="m">' + ils2(p.total) + '</div></div><div class="items">' + itemsHtml + link + '</div></div>';
+}
+
+function renderDrill() {
+  const M = months[cur];
+  let ps = D.purchases.filter(p => p.month === M);
+  if (drill.cat) ps = ps.filter(p => (p.category || 'אחר') === drill.cat);
+  if (drill.merchant) ps = ps.filter(p => (p.merchant || 'אחר') === drill.merchant);
+  const tot = sum(ps, p => p.total);
+  $('dtitle').textContent = [drill.cat, drill.merchant].filter(Boolean).join(' › ');
+  $('dlabel').textContent = mName(M);
+  $('dtotal').textContent = ils(tot);
+  // מוצרים בקטגוריה (אם יש פירוט פריטים)
+  const its = [].concat(...ps.map(p => ITEMS_BY[p.id] || []));
+  $('dmeta').innerHTML = '<span class="pill">' + ps.length + ' רכישות</span>' + (its.length ? '<span class="pill">' + its.length + ' מוצרים</span>' : '');
+  const showMerch = !drill.merchant;
+  $('dmerch-card').style.display = showMerch ? '' : 'none';
+  if (showMerch) {
+    const ms = groupSum(ps, p => p.merchant, p => p.total);
+    $('dmerch').innerHTML = ms.map(([c, v]) => row(c, v, tot, 'var(--c2)', 'merchant')).join('') || '<div class="empty">—</div>';
+    document.querySelectorAll('#dmerch .r').forEach(r => r.onclick = () => { drill.merchant = r.dataset.n; renderDrill(); window.scrollTo(0, 0); });
+  }
+  $('dlistp').innerHTML = ps.sort((a, b) => b.date.localeCompare(a.date)).map(purchaseRow).join('') || '<div class="empty">אין רכישות</div>';
+  document.querySelectorAll('#dlistp .top').forEach(t => t.onclick = () => t.parentElement.classList.toggle('open'));
+}
+
+function setupSearch() {
+  const whos = ['ילדים', 'תינוקות', 'נשים', 'גברים', 'בית'];
+  $('who').innerHTML = '<span class="chip on" data-w="">כולם</span>' + whos.map(w => '<span class="chip" data-w="' + w + '">' + w + '</span>').join('');
+  const yrs = [...new Set(D.items.map(i => i.month.slice(0, 4)).filter(Boolean))].sort().reverse();
+  $('years').innerHTML = '<span class="chip on" data-y="">כל השנים</span>' + yrs.map(y => '<span class="chip" data-y="' + y + '">' + y + '</span>').join('');
+  $('who').onclick = e => { const c = e.target.closest('.chip'); if (!c) return; who = c.dataset.w; [...$('who').children].forEach(x => x.classList.toggle('on', x === c)); search(); };
+  $('years').onclick = e => { const c = e.target.closest('.chip'); if (!c) return; year = c.dataset.y; [...$('years').children].forEach(x => x.classList.toggle('on', x === c)); search(); };
+  $('q').oninput = search;
+  const top = groupSum(D.items.filter(i => i.category !== DON), i => i.norm, i => 1).slice(0, 18);
+  $('topitems').innerHTML = top.map(([n]) => '<span class="chip">' + esc(n) + '</span>').join('') || '<div class="empty">עדיין אין מוצרים</div>';
+  $('topitems').onclick = e => { const c = e.target.closest('.chip'); if (!c) return; $('q').value = c.textContent; search(); window.scrollTo({top: 0, behavior: 'smooth'}); };
+  search();
+}
+
+function search() {
+  const q = $('q').value.trim().toLowerCase();
+  if (!q) { $('sres').innerHTML = '<div class="empty">הקלד שם מוצר או בחר מהרשימה למטה</div>'; return; }
+  const hits = D.items.filter(i => ((i.norm || '').toLowerCase().includes(q) || (i.name || '').toLowerCase().includes(q)) &&
+    (!who || i.who === who) && (!year || i.month.startsWith(year)));
+  if (!hits.length) { $('sres').innerHTML = '<div class="empty">לא נמצאו רכישות של "' + esc(q) + '"</div>'; return; }
+  const kg = hits.every(i => i.unit === 'ק״ג');
+  const units = sum(hits, i => i.units || i.qty);
+  const byM = {}; hits.forEach(i => { const b = byM[i.month] || (byM[i.month] = {u: 0, p: 0, n: 0}); b.u += i.units || i.qty; b.p += i.price; b.n++; });
+  const ms = Object.keys(byM).sort().reverse();
+  const unitLbl = kg ? 'ק״ג' : 'יחידות';
+  $('sres').innerHTML =
+    '<div class="res-sum"><div><b>' + (Math.round(units * 100) / 100).toLocaleString('he-IL') + '</b><span>' + unitLbl + '</span></div>' +
+    '<div><b>' + ils(sum(hits, i => i.price)) + '</b><span>סה״כ שולם</span></div>' +
+    '<div><b>' + ils(sum(hits, i => i.price) / Math.max(1, ms.length)) + '</b><span>ממוצע לחודש</span></div></div>' +
+    '<table><tr><th>חודש</th><th>' + unitLbl + '</th><th>שולם</th></tr>' +
+    ms.map(m => '<tr><td>' + mName(m) + '</td><td class="n">' + (Math.round(byM[m].u * 100) / 100) + '</td><td class="n">' + ils2(byM[m].p) + '</td></tr>').join('') + '</table>' +
+    '<button class="more" id="showhits">הצגת כל ' + hits.length + ' הרכישות</button><div id="hitlist"></div>';
+  $('showhits').onclick = () => {
+    $('hitlist').innerHTML = '<table><tr><th>תאריך</th><th>מוצר</th><th>חנות</th><th>מחיר</th></tr>' +
+      hits.sort((a, b) => b.date.localeCompare(a.date)).map(i => '<tr><td class="n">' + fmtDate(i.date) + '</td><td>' + esc(i.name) + '</td><td>' + esc(i.merchant) + '</td><td class="n">' + ils2(i.price) + '</td></tr>').join('') + '</table>';
+    $('showhits').remove();
+  };
+}
+
+function renderDonations() {
+  const ds = D.donations.slice().sort((a, b) => b.date.localeCompare(a.date));
+  if (D.donationsFolder) $('dfolder').innerHTML = '<a href="' + esc(D.donationsFolder) + '" target="_blank">תיקיית הקבלות ←</a>';
+  const byY = groupSum(ds, d => d.year, d => d.total).sort((a, b) => b[0].localeCompare(a[0]));
+  $('dyears').innerHTML = byY.length ? byY.map(([y, v]) =>
+    '<div class="don"><div><b>' + y + '</b> <span class="sub">' + ds.filter(d => d.year === y).length + ' קבלות</span></div><div><b>' + ils(v) + '</b></div></div>').join('')
+    : '<div class="empty">עדיין לא נמצאו קבלות תרומה</div>';
+  $('dlist').innerHTML = ds.length ? ds.map(d =>
+    '<div class="don"><div>' + esc(d.org) + '<div class="sub">' + fmtDate(d.date) + (d.reported === 'כן' ? ' · דווח לרשות המסים' : '') + '</div></div>' +
+    '<div style="text-align:left"><b>' + ils2(d.total) + '</b>' + (d.file ? '<div><a href="' + esc(d.file) + '" target="_blank">קבלה</a></div>' : '') + '</div></div>').join('')
+    : '<div class="empty">—</div>';
+}
+</script>
+</body>
+</html>
