@@ -356,7 +356,7 @@ function purchaseRow(p) {
   return '<div class="p"><div class="top"><div><div class="m">' + esc(p.merchant) +
     (p.category === DON ? '<span class="tag">תרומה</span>' : '') + (p.review ? '<span class="tag warn">לבדיקה</span>' : '') + (p.refund === 'other' ? '<span class="tag warn">החזר – לא מקוזז' + (p.refundOf ? ' (קנייה מ־' + fmtDate(p.refundOf) + ')' : '') + '</span>' : '') +
     '</div><div class="meta">' + fmtDate(p.date) + ' · ' + esc(p.category) + (its.length ? ' · ' + its.length + ' מוצרים' : '') + '</div></div>' +
-    '<div class="m">' + ils2(p.total) + '</div></div><div class="items">' + itemsHtml + link + '</div></div>';
+    '<div class="m">' + ils2(p.total) + (p.orig ? '<div class="meta">' + esc(p.orig) + '</div>' : '') + '</div></div><div class="items">' + itemsHtml + link + '</div></div>';
 }
 
 function renderDrill() {
