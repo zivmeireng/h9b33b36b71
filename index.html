@@ -111,7 +111,11 @@
   body{padding-top:env(safe-area-inset-top)}
 
 .fab{position:fixed;left:16px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:30;border:0;border-radius:28px;padding:14px 18px;font:inherit;font-weight:600;background:var(--c1);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25)}
-.toast{position:fixed;right:16px;left:16px;bottom:calc(140px + env(safe-area-inset-bottom));z-index:31;background:#222;color:#fff;padding:12px 14px;border-radius:12px;text-align:center;display:none}
+.fab2{position:fixed;left:16px;bottom:calc(136px + env(safe-area-inset-bottom));z-index:30;border:0;border-radius:50%;width:46px;height:46px;font-size:20px;background:#fff;color:var(--c1);box-shadow:0 4px 14px rgba(0,0,0,.22)}
+.stmt{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.stmt .sub{font-size:13px;opacity:.7}
+.stmt button{border:1px solid var(--c1);background:transparent;color:var(--c1);border-radius:10px;padding:8px 12px;font:inherit;white-space:nowrap}
+.toast{position:fixed;right:16px;left:16px;bottom:calc(196px + env(safe-area-inset-bottom));z-index:31;background:#222;color:#fff;padding:12px 14px;border-radius:12px;text-align:center;display:none}
 .toast button{margin:8px 6px 0;border:0;border-radius:10px;padding:8px 16px;font:inherit;background:#fff;color:#222}
 </style>
 </head>
@@ -160,6 +164,7 @@
     <!-- רכישות -->
     <section class="view" id="v-list">
       <div class="card"><h2><span id="list-title">רכישות החודש</span><small>לחיצה פותחת פירוט</small></h2><div id="plist"></div></div>
+      <div class="card stmt"><div><b>דף פירוט מכרטיס אשראי</b><div class="sub">פעם בחודש: מורידים מאפליקציית האשראי (PDF / אקסל) ומעלים – כדי לתפוס גם קניות בלי קבלה</div></div><button id="stmtbtn">📄 העלאה</button></div>
     </section>
 
     <!-- חיפוש מוצר -->
@@ -186,6 +191,9 @@
 
 <button class="fab" id="scanbtn" style="display:none">📷 סריקת קבלה</button>
 <input type="file" id="scanfile" accept="image/*" capture="environment" multiple style="display:none">
+<button class="fab2" id="galbtn" style="display:none" title="קבלה מהגלריה">🖼️</button>
+<input type="file" id="galfile" accept="image/*" multiple style="display:none">
+<input type="file" id="stmtfile" accept=".pdf,.xlsx,.xls,.csv,application/pdf,image/*" style="display:none">
 <div class="toast" id="toast"></div>
 
 <nav class="tabs" id="tabs" style="display:none">
@@ -241,7 +249,7 @@ function load(json, fromCache) {
   return true;
 }
 function showLogin(msg) {
-  $('loading').style.display = 'none'; $('app').style.display = 'none'; $('tabs').style.display = 'none'; $('scanbtn').style.display = 'none';
+  $('loading').style.display = 'none'; $('app').style.display = 'none'; $('tabs').style.display = 'none'; $('scanbtn').style.display = $('galbtn').style.display = 'none';
   $('login').style.display = ''; $('lerr').textContent = msg || ''; $('pw').focus();
 }
 async function fetchData() {
@@ -286,7 +294,7 @@ function init() {
   $('next').onclick = () => { if (cur < months.length - 1) { cur++; render(); if (drill) renderDrill(); } };
   document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => show(b.dataset.v));
   setupSearch(); renderDonations();
-  $('loading').style.display = 'none'; $('app').style.display = ''; $('tabs').style.display = ''; $('scanbtn').style.display = '';
+  $('loading').style.display = 'none'; $('app').style.display = ''; $('tabs').style.display = ''; $('scanbtn').style.display = $('galbtn').style.display = '';
   render();
 }
 
@@ -442,9 +450,9 @@ function renderDonations() {
     : '<div class="empty">—</div>';
 }
 
-// סריקת קבלה: צילום → הקטנה בטלפון → שליחה (הסיסמה מאמתת, השרת מעביר לעיבוד)
+// סריקת קבלה (מצלמה / גלריה) והעלאת דף פירוט – הסיסמה מאמתת, השרת מעביר לעיבוד
 let scanOwner = '';
-function toast(t, ms) { const el = $('toast'); el.textContent = t; el.style.display = 'block'; clearTimeout(toast.t); if (ms) toast.t = setTimeout(() => el.style.display = 'none', ms); }
+function toast(t, ms) { const el = $('toast'); el.onclick = null; el.textContent = t; el.style.display = 'block'; clearTimeout(toast.t); if (ms) toast.t = setTimeout(() => el.style.display = 'none', ms); }
 function shrink(file, max = 1600) {
   return new Promise((ok, bad) => {
     const img = new Image(), url = URL.createObjectURL(file);
@@ -458,27 +466,57 @@ function shrink(file, max = 1600) {
     img.src = url;
   });
 }
-$('scanbtn').onclick = () => {
-  if (owner) { scanOwner = owner; return $('scanfile').click(); }
+const b64of = f => new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = () => bad(new Error('לא הצלחתי לקרוא את הקובץ')); r.readAsDataURL(f); });
+let XLSXlib = null;
+async function sheetText(f) {   // אקסל/CSV → טקסט (נטען רק כשצריך)
+  if (/\.csv$/i.test(f.name)) return await f.text();
+  if (!XLSXlib) await new Promise((ok, bad) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'; sc.onload = ok; sc.onerror = () => bad(new Error('לא הצלחתי לטעון קורא אקסל')); document.head.appendChild(sc); }), XLSXlib = window.XLSX;
+  const wb = XLSXlib.read(await f.arrayBuffer(), { type: 'array' });
+  return wb.SheetNames.map(n => XLSXlib.utils.sheet_to_csv(wb.Sheets[n])).join('\n\n').slice(0, 60000);
+}
+// של מי? אם נבחר בעלים למעלה – הוא; אחרת שואלים פעם אחת
+function askOwner(then) {
+  if (owner) { scanOwner = owner; return then(); }
   const names = [...new Set((FULL ? FULL.purchases : []).map(p => p.owner || 'זיו'))];
   const el = $('toast'); clearTimeout(toast.t); el.style.display = 'block';
-  el.innerHTML = 'של מי הקבלה?<br>' + names.map(n => '<button data-o="' + esc(n) + '">' + esc(n) + '</button>').join('');
-  el.onclick = e => { const b = e.target.closest('button'); if (!b) return; el.onclick = null; el.style.display = 'none'; scanOwner = b.dataset.o; $('scanfile').click(); };
-};
-$('scanfile').onchange = async e => {
-  const files = [...e.target.files].slice(0, 4); e.target.value = '';
-  if (!files.length) return;
+  el.innerHTML = 'של מי?<br>' + names.map(n => '<button data-o="' + esc(n) + '">' + esc(n) + '</button>').join('');
+  el.onclick = e => { const b = e.target.closest('button'); if (!b) return; el.onclick = null; el.style.display = 'none'; scanOwner = b.dataset.o; then(); };
+}
+async function send(body, what) {
+  toast('מעבד את ' + what + '… (עד חצי דקה)');
+  const r = await fetch(API + '?scan=1', { method: 'POST', headers: { 'x-password': LS('exp_pw') || '', 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ owner: scanOwner }, body)) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.ok) throw new Error(j.error || (j.result && (j.result.error || j.result.raw)) || ('שגיאה ' + r.status));
+  return j.result || {};
+}
+async function sendImages(fileList) {
+  const files = [...fileList].slice(0, 4); if (!files.length) return;
   try {
     toast('מכין את התמונה…');
     const images = await Promise.all(files.map(f => shrink(f)));
-    toast('מעבד את הקבלה… (עד חצי דקה)');
-    const r = await fetch(API + '?scan=1', { method: 'POST', headers: { 'x-password': LS('exp_pw') || '', 'Content-Type': 'application/json' }, body: JSON.stringify({ owner: scanOwner, images }) });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok || !j.ok) throw new Error(j.error || (j.result && (j.result.error || j.result.raw)) || ('שגיאה ' + r.status));
-    const x = j.result || {};
+    const x = await send({ images }, 'הקבלה');
     toast(x.status === 'duplicate' ? 'הקבלה הזו כבר קיימת ✓' : x.status === 'review' ? 'נשמר לבדיקה – התמונה לא הייתה ברורה מספיק' : '✓ נשמר' + (x.merchant ? ': ' + x.merchant : '') + (x.total ? ' · ' + ils2(x.total) : ''), 5000);
     setTimeout(fetchData, 3000);
   } catch (err) { toast('השליחה נכשלה: ' + err.message, 6000); }
+}
+$('scanbtn').onclick = () => askOwner(() => $('scanfile').click());
+$('galbtn').onclick = () => askOwner(() => $('galfile').click());
+$('scanfile').onchange = e => { const f = e.target.files; sendImages(f).then(() => e.target.value = ''); };
+$('galfile').onchange = e => { const f = e.target.files; sendImages(f).then(() => e.target.value = ''); };
+$('stmtbtn').onclick = () => askOwner(() => $('stmtfile').click());
+$('stmtfile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    if (f.size > 8e6) throw new Error('הקובץ גדול מדי (עד 8MB)');
+    toast('קורא את הקובץ…');
+    let body;
+    if (/pdf/i.test(f.type) || /\.pdf$/i.test(f.name)) body = { kind: 'statement', files: [{ mime: 'application/pdf', data: await b64of(f) }] };
+    else if (/^image\//.test(f.type)) body = { kind: 'statement', images: [await shrink(f, 2200)] };
+    else body = { kind: 'statement', text: await sheetText(f) };
+    const x = await send(body, 'דף הפירוט');
+    toast(x.status === 'duplicate' ? 'דף הפירוט הזה כבר הועלה ✓' : x.status === 'review' ? 'לא הצלחתי לקרוא את הקובץ – נשמר לבדיקה' : '✓ נקלטו ' + (x.charges || 0) + ' חיובים' + (x.merchant ? ' מ' + x.merchant : ''), 6000);
+    setTimeout(fetchData, 3000);
+  } catch (err) { toast('ההעלאה נכשלה: ' + err.message, 6000); }
 };
 </script>
 </body>
