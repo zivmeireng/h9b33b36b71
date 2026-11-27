@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="הוצאות">
+<meta name="theme-color" content="#4f6cf7">
+<title>הוצאות הבית</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%234f6cf7'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='Arial'%3E%E2%82%AA%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#f5f6fa; --card:#ffffff; --ink:#1b2133; --muted:#7a8296; --line:#eceef3;
+    --brand:#4f6cf7; --brand-soft:#eef1ff; --good:#1fa971; --bad:#e5484d; --warn:#f5a524;
+    --c1:#4f6cf7; --c2:#22b8a6; --c3:#f5a524; --c4:#e5484d; --c5:#9b5cf6; --c6:#ec4899; --c7:#0ea5e9; --c8:#84cc16;
+    --radius:18px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Rubik","Assistant","Segoe UI",Arial,sans-serif;font-size:15px}
+  .wrap{max-width:720px;margin:0 auto;padding:16px 14px 80px}
+  header{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 14px}
+  h1{font-size:22px;margin:0;font-weight:700}
+  .sub{color:var(--muted);font-size:13px}
+  .month{display:flex;align-items:center;gap:6px;background:var(--card);border-radius:999px;padding:4px;box-shadow:0 1px 3px rgba(20,30,60,.06)}
+  .month button{border:0;background:var(--brand-soft);color:var(--brand);width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer}
+  .month button:disabled{opacity:.35}
+  .month span{min-width:96px;text-align:center;font-weight:600}
+  .card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(20,30,60,.06)}
+  .card h2{font-size:16px;margin:0 0 12px;font-weight:600;display:flex;justify-content:space-between;align-items:baseline}
+  .card h2 small{color:var(--muted);font-weight:400;font-size:12px}
+  .hero{background:linear-gradient(135deg,#4f6cf7,#7b5cf6);color:#fff}
+  .hero .label{opacity:.85;font-size:13px}
+  .hero .big{font-size:34px;font-weight:700;margin:4px 0 6px;letter-spacing:-.5px}
+  .hero .row{display:flex;gap:10px;flex-wrap:wrap;font-size:13px}
+  .pill{background:rgba(255,255,255,.18);border-radius:999px;padding:4px 10px}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .kpi{background:var(--card);border-radius:14px;padding:12px;box-shadow:0 1px 3px rgba(20,30,60,.06)}
+  .kpi .v{font-size:18px;font-weight:700}
+  .kpi .l{font-size:12px;color:var(--muted)}
+  /* months chart */
+  .bars{display:flex;align-items:flex-end;gap:6px;height:150px;padding-top:8px}
+  .bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;height:100%;justify-content:flex-end}
+  .bar i{display:block;width:100%;max-width:34px;border-radius:8px 8px 4px 4px;background:#d9defc;transition:.2s}
+  .bar.on i{background:var(--brand)}
+  .bar em{font-style:normal;font-size:10px;color:var(--muted)}
+  /* category rows */
+  .rows .r{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
+  .rows .r:last-child{border-bottom:0}
+  .rows .name{display:flex;align-items:center;gap:8px;font-weight:500}
+  .dot{width:10px;height:10px;border-radius:50%;flex:none}
+  .rows .amt{font-weight:600}
+  .track{grid-column:1/-1;height:6px;background:var(--line);border-radius:999px;overflow:hidden}
+  .track b{display:block;height:100%;border-radius:999px}
+  .pct{color:var(--muted);font-size:12px;font-weight:400;margin-inline-start:6px}
+  /* purchases list */
+  .p{border-bottom:1px solid var(--line);padding:10px 0}
+  .p:last-child{border-bottom:0}
+  .p .top{display:flex;justify-content:space-between;gap:10px;cursor:pointer}
+  .p .m{font-weight:600}
+  .p .meta{font-size:12px;color:var(--muted);margin-top:2px}
+  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--brand-soft);color:var(--brand);margin-inline-start:6px}
+  .tag.warn{background:#fff4e0;color:#b26b00}
+  .items{display:none;margin-top:8px;background:#fafbfd;border-radius:12px;padding:6px 10px}
+  .p.open .items{display:block}
+  .it{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:5px 0;border-bottom:1px dashed var(--line)}
+  .it:last-child{border-bottom:0}
+  .it .q{color:var(--muted);font-size:12px}
+  /* search */
+  .search{display:flex;gap:8px}
+  .search input{flex:1;border:1px solid var(--line);background:#fafbfd;border-radius:12px;padding:12px 14px;font-size:16px;font-family:inherit}
+  .search input:focus{outline:2px solid var(--brand-soft);border-color:var(--brand)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 2px}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer}
+  .chip.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .res-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+  .res-sum div{background:var(--brand-soft);border-radius:12px;padding:10px;text-align:center}
+  .res-sum b{display:block;font-size:18px}
+  .res-sum span{font-size:12px;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  td,th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:right}
+  th{color:var(--muted);font-weight:500;font-size:12px}
+  td.n{white-space:nowrap}
+  .empty{color:var(--muted);text-align:center;padding:16px 0;font-size:14px}
+  .more{display:block;width:100%;margin-top:8px;border:0;background:var(--brand-soft);color:var(--brand);border-radius:12px;padding:10px;font-family:inherit;font-size:14px;cursor:pointer}
+  .don{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .don:last-child{border-bottom:0}
+  a{color:var(--brand);text-decoration:none}
+  .foot{text-align:center;color:var(--muted);font-size:12px;margin-top:18px}
+  .tabs{position:fixed;bottom:0;inset-inline:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 0 calc(8px + env(safe-area-inset-bottom))}
+  .tabs button{border:0;background:none;font-family:inherit;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+  .tabs button span{font-size:20px}
+  .tabs button.on{color:var(--brand);font-weight:600}
+  .view{display:none}.view.on{display:block}
+  .crumb{display:flex;align-items:center;gap:8px;margin:0 2px 12px;flex-wrap:wrap}
+  .crumb button{border:0;background:var(--card);box-shadow:0 1px 3px rgba(20,30,60,.08);border-radius:999px;padding:8px 14px;font-family:inherit;font-size:14px;cursor:pointer;color:var(--brand)}
+  .crumb b{font-size:17px}
+  .r .chev{color:var(--muted);margin-inline-start:4px}
+  .refresh{font-size:11px;color:var(--muted)}
+  .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;color:var(--muted);gap:12px}
+  .spin{width:34px;height:34px;border:3px solid var(--brand-soft);border-top-color:var(--brand);border-radius:50%;animation:s 1s linear infinite}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .login{max-width:340px;margin:18vh auto 0;text-align:center}
+  .login h1{margin-bottom:6px}
+  .login input{width:100%;border:1px solid var(--line);background:#fff;border-radius:14px;padding:14px;font-size:16px;font-family:inherit;margin:18px 0 10px;text-align:center}
+  .login button{width:100%;border:0;background:var(--brand);color:#fff;border-radius:14px;padding:14px;font-size:16px;font-family:inherit;cursor:pointer}
+  .login .err{color:var(--bad);font-size:13px;min-height:18px;margin-top:8px}
+  .owners{display:flex;gap:6px;margin:0 2px 12px;flex-wrap:wrap}
+  .login .alt{background:none;color:var(--brand);margin-top:8px}
+  .login .choice{display:grid;gap:10px;margin-top:18px}
+  .fam .code{font-size:28px;font-weight:700;letter-spacing:3px;text-align:center;background:var(--brand-soft);color:var(--brand);border-radius:14px;padding:14px;margin:8px 0}
+  .fam .mem{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)}
+  .fam button{width:100%;border:0;background:var(--brand);color:#fff;border-radius:12px;padding:12px;font-family:inherit;font-size:15px;cursor:pointer;margin-top:8px}
+  .fam button.sec{background:var(--brand-soft);color:var(--brand)}
+  .tok{direction:ltr;font-family:monospace;font-size:12px;word-break:break-all;background:#fafbfd;border:1px dashed var(--line);border-radius:10px;padding:10px;margin:8px 0}
+  .steps{padding-inline-start:20px;margin:6px 0;font-size:14px;line-height:1.7}
+  .owners .chip{flex:1;text-align:center}
+  body{padding-top:env(safe-area-inset-top)}
+
+.fab{position:fixed;left:16px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:30;border:0;border-radius:28px;padding:14px 18px;font:inherit;font-weight:600;background:var(--c1);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.toast{position:fixed;right:16px;left:16px;bottom:calc(140px + env(safe-area-inset-bottom));z-index:31;background:#222;color:#fff;padding:12px 14px;border-radius:12px;text-align:center;display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="login" class="login" style="display:none">
+    <h1>הוצאות הבית</h1><div class="sub" id="lsub">כניסה עם המייל שלך</div>
+    <form id="lform"><input id="email" type="email" autocomplete="email" placeholder="כתובת מייל" dir="ltr"><button>שליחת קוד כניסה</button></form>
+    <form id="cform" style="display:none"><input id="code" inputmode="numeric" autocomplete="one-time-code" placeholder="הקוד מהמייל" dir="ltr"><button>כניסה</button>
+      <button type="button" class="alt" id="cback">מייל אחר</button></form>
+    <div class="err" id="lerr"></div>
+  </div>
+  <div id="onboard" class="login" style="display:none">
+    <h1>ברוכים הבאים</h1><div class="sub">פותחים משק בית חדש, או מצטרפים למשפחה קיימת עם קוד</div>
+    <input id="myname" placeholder="השם שלך (למשל זיו)">
+    <div class="choice">
+      <form id="newform"><input id="hname" placeholder="שם משק הבית (למשל משפחת כהן)"><button>פתיחת משק בית חדש</button></form>
+      <div class="sub">או</div>
+      <form id="joinform"><input id="jcode" placeholder="קוד משפחתי" dir="ltr" style="text-transform:uppercase"><button>הצטרפות למשפחה</button></form>
+    </div>
+    <div class="err" id="oerr"></div>
+  </div>
+  <div id="loading" class="loading"><div class="spin"></div>טוען נתונים…</div>
+
+  <div id="app" style="display:none">
+    <header>
+      <div><h1>ההוצאות שלנו</h1><div class="sub" id="updated"></div></div>
+      <div class="month"><button id="prev">›</button><span id="mlabel"></span><button id="next">‹</button></div>
+    </header>
+
+    <div class="owners" id="owners"></div>
+
+    <!-- סקירה -->
+    <section class="view on" id="v-home">
+      <div class="card hero">
+        <div class="label">סה״כ הוצאות בחודש</div>
+        <div class="big" id="mtotal"></div>
+        <div class="row" id="mcompare"></div>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><div class="v" id="k-count"></div><div class="l">רכישות</div></div>
+        <div class="kpi"><div class="v" id="k-avg"></div><div class="l">ממוצע לרכישה</div></div>
+        <div class="kpi"><div class="v" id="k-year"></div><div class="l">מתחילת השנה</div></div>
+      </div>
+      <div class="card"><h2>12 החודשים האחרונים <small>לחיצה על עמודה בוחרת חודש</small></h2><div class="bars" id="bars"></div></div>
+      <div class="card"><h2>לפי קטגוריה <small>לחיצה לפירוט</small></h2><div class="rows" id="cats"></div></div>
+      <div class="card"><h2>איפה הוצאתי הכי הרבה <small>לחיצה לפירוט</small></h2><div class="rows" id="merch"></div></div>
+    </section>
+
+    <!-- פירוט: קטגוריה → עסקים → רכישות -->
+    <section class="view" id="v-drill">
+      <div class="crumb"><button id="back">→ חזרה</button><b id="dtitle"></b></div>
+      <div class="card hero"><div class="label" id="dlabel"></div><div class="big" id="dtotal"></div><div class="row" id="dmeta"></div></div>
+      <div class="card" id="dmerch-card"><h2>לפי עסק <small>לחיצה לפירוט</small></h2><div class="rows" id="dmerch"></div></div>
+      <div class="card"><h2>רכישות <small>לחיצה פותחת מוצרים</small></h2><div id="dlistp"></div></div>
+    </section>
+
+    <!-- רכישות -->
+    <section class="view" id="v-list">
+      <div class="card"><h2><span id="list-title">רכישות החודש</span><small>לחיצה פותחת פירוט</small></h2><div id="plist"></div></div>
+    </section>
+
+    <!-- חיפוש מוצר -->
+    <section class="view" id="v-search">
+      <div class="card">
+        <h2>כמה קניתי…?</h2>
+        <div class="search"><input id="q" placeholder="למשל: ביצים, חלב, מכנסיים" autocomplete="off"></div>
+        <div class="chips" id="who"></div>
+        <div class="chips" id="years"></div>
+        <div id="sres"></div>
+      </div>
+      <div class="card"><h2>המוצרים שאני הכי קונה</h2><div class="chips" id="topitems"></div></div>
+    </section>
+
+    <!-- תרומות -->
+    <section class="view" id="v-don">
+      <div class="card"><h2>תרומות לפי שנה <small id="dfolder"></small></h2><div id="dyears"></div></div>
+      <div class="card"><h2>כל הקבלות</h2><div id="dlist"></div></div>
+    </section>
+
+    <!-- משפחה והגדרות -->
+    <section class="view fam" id="v-fam">
+      <div class="card"><h2 id="fname">המשפחה</h2>
+        <div class="sub">קוד הצטרפות – שלחו לבן/בת הזוג כדי שיצטרפו:</div>
+        <div class="code" id="fcode"></div>
+        <button class="sec" id="fshare">העתקת הזמנה</button>
+        <div id="fmembers" style="margin-top:12px"></div>
+      </div>
+      <div class="card"><h2>חיבור הטלפון הזה</h2>
+        <div class="sub">כדי שקבלות מסמס ייכנסו אוטומטית מהטלפון הזה</div>
+        <div id="fsources"></div>
+        <button id="fconnect">חיבור טלפון</button>
+        <div id="ftoken"></div>
+      </div>
+      <div class="card"><h2>חשבון</h2><div class="sub" id="femail"></div><button class="sec" id="logout2">יציאה</button></div>
+    </section>
+
+    <div class="foot">הנתונים נאספים מקבלות במייל וב-SMS · רק בני המשפחה רואים אותם</div>
+  </div>
+</div>
+
+<button class="fab" id="scanbtn" style="display:none">📷 סריקת קבלה</button>
+<input type="file" id="scanfile" accept="image/*" capture="environment" multiple style="display:none">
+<div class="toast" id="toast"></div>
+
+<nav class="tabs" id="tabs" style="display:none">
+  <button class="on" data-v="home"><span>◔</span>סקירה</button>
+  <button data-v="list"><span>☰</span>רכישות</button>
+  <button data-v="search"><span>⌕</span>חיפוש מוצר</button>
+  <button data-v="don"><span>♡</span>תרומות</button>
+  <button data-v="fam"><span>⌂</span>משפחה</button>
+</nav>
+
+<script>
+const HEB_M = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const COLORS = ['var(--c1)','var(--c2)','var(--c3)','var(--c4)','var(--c5)','var(--c6)','var(--c7)','var(--c8)'];
+const DON = 'תרומה';
+let D, months = [], cur = 0, who = '', year = '';
+
+const $ = id => document.getElementById(id);
+const ils = n => '₪' + Math.round(n).toLocaleString('he-IL');
+const ils2 = n => '₪' + (Math.round(n * 100) / 100).toLocaleString('he-IL', {minimumFractionDigits: 0, maximumFractionDigits: 2});
+const mName = m => { const [y, mm] = m.split('-'); return HEB_M[+mm - 1] + ' ' + y; };
+const mShort = m => HEB_M[+m.split('-')[1] - 1].slice(0, 3);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtDate = d => d ? d.split('-').reverse().join('/') : '';
+const spend = p => p.category !== DON && p.refund !== 'other';
+const counted = p => p.refund !== 'other'; // החזר על קנייה מחודש אחר לא מקוזז
+const sum = (arr, f) => arr.reduce((a, x) => a + (f ? f(x) : x), 0);
+const groupSum = (arr, key, val) => { const m = {}; arr.forEach(x => { const k = key(x) || 'אחר'; m[k] = (m[k] || 0) + val(x); }); return Object.entries(m).sort((a, b) => b[1] - a[1]); };
+
+// מהיר: מציגים מיד את הנתונים מהביקור הקודם (שמורים בטלפון), ומרעננים ברקע
+let started = false, ITEMS_BY = {};
+function load(json, fromCache) {
+  try { D = JSON.parse(json); } catch (e) { return false; }
+  ITEMS_BY = {}; D.items.forEach(i => (ITEMS_BY[i.pid] = ITEMS_BY[i.pid] || []).push(i));
+  if (!started) { started = true; init(); } else { rerender(); }
+  $('updated').textContent = (fromCache ? 'מתעדכן… · ' : 'עודכן ') + new Date(D.updated).toLocaleString('he-IL', {day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit'});
+  return true;
+}
+const SB = supabase.createClient('https://dsolzfolmpfkthgmtjph.supabase.co', 'sb_publishable_EH2O7B6okg9dpPnVUw2XZQ_CDMUScUh',
+  { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+const LS = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const LSset = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
+let FULL = null, ME = null, owner = LS('hh_owner') || '';
+function applyOwner() {
+  if (!FULL) return;
+  const ps = owner ? FULL.purchases.filter(p => p.owner === owner) : FULL.purchases;
+  const ids = new Set(ps.map(p => p.id));
+  D = Object.assign({}, FULL, { purchases: ps, items: owner ? FULL.items.filter(i => ids.has(i.pid)) : FULL.items });
+  ITEMS_BY = {}; D.items.forEach(i => (ITEMS_BY[i.pid] = ITEMS_BY[i.pid] || []).push(i));
+}
+function load(json, fromCache) {
+  try { FULL = typeof json === 'string' ? JSON.parse(json) : json; } catch (e) { return false; }
+  FULL.purchases.forEach(p => { p.total = Number(p.total) || 0; p.date = String(p.date); });
+  FULL.items.forEach(i => { i.price = Number(i.price) || 0; i.qty = Number(i.qty) || 0; i.units = Number(i.units) || 0; i.date = String(i.date); });
+  FULL.donations.forEach(d => { d.total = Number(d.total) || 0; d.date = String(d.date); });
+  applyOwner();
+  if (!started) { started = true; init(); } else { rerender(); }
+  $('updated').textContent = (fromCache ? 'מתעדכן… · ' : 'עודכן ') + new Date(FULL.updated).toLocaleString('he-IL', {day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit'});
+  return true;
+}
+const screen = id => ['login', 'onboard', 'loading', 'app'].forEach(x => $(x).style.display = x === id ? '' : 'none') || ($('tabs').style.display = $('scanbtn').style.display = id === 'app' ? '' : 'none');
+function showLogin(msg) { screen('login'); $('lerr').textContent = msg || ''; }
+
+async function boot() {
+  const { data: { session } } = await SB.auth.getSession();
+  if (!session) { LSset('hh_data', null); return showLogin(); }
+  $('femail').textContent = session.user.email || '';
+  const cached = LS('hh_data');
+  if (cached && !started) load(cached, true);
+  const me = await SB.rpc('hh_me');
+  if (me.error) { if (!started) { screen('loading'); $('loading').innerHTML = '<div>שגיאה בטעינה</div><div class="sub">' + esc(me.error.message) + '</div>'; } return; }
+  ME = me.data;
+  if (!ME) return screen('onboard');
+  renderFamily();
+  const r = await SB.rpc('hh_data');
+  if (r.error) { if (!started) $('loading').innerHTML = '<div>שגיאה בטעינה</div><div class="sub">' + esc(r.error.message) + '</div>'; return; }
+  LSset('hh_data', JSON.stringify(r.data)); load(r.data, false);
+}
+
+// כניסה: קוד חד-פעמי במייל (או לחיצה על הקישור שבמייל)
+let pendingEmail = '';
+$('lform').onsubmit = async e => {
+  e.preventDefault(); pendingEmail = $('email').value.trim(); if (!pendingEmail) return;
+  $('lerr').textContent = 'שולח…';
+  const { error } = await SB.auth.signInWithOtp({ email: pendingEmail, options: { emailRedirectTo: location.origin + location.pathname } });
+  if (error) { $('lerr').textContent = error.message; return; }
+  $('lerr').textContent = ''; $('lsub').textContent = 'שלחנו קוד ל-' + pendingEmail; $('lform').style.display = 'none'; $('cform').style.display = '';
+};
+$('cform').onsubmit = async e => {
+  e.preventDefault();
+  const { error } = await SB.auth.verifyOtp({ email: pendingEmail, token: $('code').value.trim(), type: 'email' });
+  if (error) { $('lerr').textContent = 'קוד שגוי או שפג תוקפו'; return; }
+  screen('loading'); boot();
+};
+$('cback').onclick = () => { $('cform').style.display = 'none'; $('lform').style.display = ''; $('lsub').textContent = 'כניסה עם המייל שלך'; };
+
+// פתיחת משק בית / הצטרפות
+const myName = () => $('myname').value.trim();
+$('newform').onsubmit = async e => {
+  e.preventDefault(); if (!myName() || !$('hname').value.trim()) { $('oerr').textContent = 'צריך שם ושם למשק הבית'; return; }
+  const { error } = await SB.rpc('hh_create', { p_name: $('hname').value.trim(), p_display_name: myName() });
+  if (error) { $('oerr').textContent = error.message; return; } screen('loading'); boot();
+};
+$('joinform').onsubmit = async e => {
+  e.preventDefault(); if (!myName() || !$('jcode').value.trim()) { $('oerr').textContent = 'צריך שם וקוד משפחתי'; return; }
+  const { error } = await SB.rpc('hh_join', { p_code: $('jcode').value.trim().toUpperCase(), p_display_name: myName() });
+  if (error) { $('oerr').textContent = /invalid code/.test(error.message) ? 'הקוד לא נמצא' : error.message; return; } screen('loading'); boot();
+};
+
+function renderFamily() {
+  $('fname').textContent = ME.household.name;
+  $('fcode').textContent = ME.household.join_code;
+  $('fmembers').innerHTML = (ME.members || []).map(m => '<div class="mem"><span>' + esc(m.name) + (m.role === 'owner' ? ' <span class="tag">מנהל</span>' : '') + '</span><span class="sub">' + (m.joined ? 'מחובר' : 'טרם הצטרף') + '</span></div>').join('');
+  $('fsources').innerHTML = (ME.sources || []).map(s => '<div class="mem"><span>' + esc(s.label || s.kind) + '</span><span class="sub">' + (s.last_seen_at ? 'פעיל ' + new Date(s.last_seen_at).toLocaleDateString('he-IL') : 'עוד לא שלח') + '</span></div>').join('');
+  const names = (ME.members || []).map(m => m.name);
+  $('owners').innerHTML = names.length > 1 ? '<span class="chip" data-o="">כולם</span>' + names.map(n => '<span class="chip" data-o="' + esc(n) + '">' + esc(n) + '</span>').join('') : '';
+  if (owner && !names.includes(owner)) owner = '';
+  document.querySelectorAll('#owners .chip').forEach(c => c.classList.toggle('on', c.dataset.o === owner));
+}
+$('fshare').onclick = async () => {
+  const t = 'הצטרפות למעקב ההוצאות של ' + ME.household.name + ':\n' + location.origin + location.pathname + '\nקוד משפחתי: ' + ME.household.join_code;
+  try { await navigator.clipboard.writeText(t); $('fshare').textContent = 'הועתק ✓'; } catch (e) { prompt('העתיקו:', t); }
+};
+$('fconnect').onclick = async () => {
+  const label = (ME.me.name || '') + ' – ' + (/iPhone|iPad/.test(navigator.userAgent) ? 'אייפון' : /Android/.test(navigator.userAgent) ? 'אנדרואיד' : 'מכשיר');
+  const { data, error } = await SB.rpc('hh_register_source', { p_kind: /Android/.test(navigator.userAgent) ? 'android_sms' : 'ios_shortcut', p_label: label });
+  if (error) { $('ftoken').innerHTML = '<div class="err">' + esc(error.message) + '</div>'; return; }
+  $('ftoken').innerHTML = '<div class="sub" style="margin-top:10px">מפתח החיבור של הטלפון הזה (מוצג פעם אחת):</div><div class="tok">' + esc(data) + '</div>' +
+    '<button class="sec" id="tokcopy">העתקת המפתח</button>' +
+    '<ol class="steps"><li>מתקינים את קיצור "קבלות" (קישור יופיע כאן)</li><li>כשהקיצור שואל – מדביקים את המפתח</li><li>קיצורים ← אוטומציה ← "כשמתקבלת הודעה" ← הפעלה מיידית ← מפעיל את "קבלות"</li></ol>';
+  $('tokcopy').onclick = async () => { try { await navigator.clipboard.writeText(data); $('tokcopy').textContent = 'הועתק ✓'; } catch (e) {} };
+};
+const logout = async e => { e && e.preventDefault(); await SB.auth.signOut(); ['hh_data', 'hh_owner'].forEach(k => LSset(k, null)); location.reload(); };
+$('logout2').onclick = logout;
+SB.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_IN' && !started && $('login').style.display !== 'none') { screen('loading'); boot(); } });
+boot();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && started) boot(); });
+
+let drill = null; // {cat, merchant}
+function rerender() {
+  const M = months[cur];
+  months = []; buildMonths(); cur = Math.max(0, months.indexOf(M)); if (cur < 0) cur = months.length - 1;
+  setupSearch(); renderDonations(); render(); if (drill) renderDrill();
+}
+
+function init() {
+  buildMonths();
+  cur = months.length - 1;
+  $('back').onclick = () => { if (drill && drill.merchant && drill.cat) { drill.merchant = null; renderDrill(); } else { drill = null; show('home'); } };
+  document.querySelectorAll('#owners .chip').forEach(c => c.classList.toggle('on', c.dataset.o === owner));
+  $('owners').onclick = e => { const c = e.target.closest('.chip'); if (!c) return; owner = c.dataset.o; LSset('hh_owner', owner);
+    document.querySelectorAll('#owners .chip').forEach(x => x.classList.toggle('on', x === c)); applyOwner(); rerender(); };
+  $('prev').onclick = () => { if (cur > 0) { cur--; render(); if (drill) renderDrill(); } };
+  $('next').onclick = () => { if (cur < months.length - 1) { cur++; render(); if (drill) renderDrill(); } };
+  document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => show(b.dataset.v));
+  setupSearch(); renderDonations();
+  $('loading').style.display = 'none'; $('app').style.display = ''; $('tabs').style.display = '';
+  render();
+}
+
+function buildMonths() {
+  const now = new Date();
+  const thisM = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  const set = new Set(D.purchases.map(p => p.month).filter(Boolean)); set.add(thisM);
+  const last = [...set].sort().pop();
+  let [y, m] = last.split('-').map(Number);
+  for (let i = 0; i < 12; i++) { months.unshift(y + '-' + String(m).padStart(2, '0')); if (--m === 0) { m = 12; y--; } }
+}
+
+function show(v) {
+  document.querySelectorAll('.view').forEach(x => x.classList.toggle('on', x.id === 'v-' + v));
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  window.scrollTo(0, 0);
+}
+
+function render() {
+  const M = months[cur];
+  $('mlabel').textContent = mName(M);
+  $('prev').disabled = cur === 0; $('next').disabled = cur === months.length - 1;
+  const ps = D.purchases.filter(p => p.month === M && spend(p));
+  const tot = sum(ps, p => p.total);
+  $('mtotal').textContent = ils(tot);
+  const prevM = months[cur - 1];
+  const prevTot = prevM ? sum(D.purchases.filter(p => p.month === prevM && spend(p)), p => p.total) : 0;
+  let cmp = '';
+  if (prevTot > 0) { const diff = (tot - prevTot) / prevTot * 100; cmp += '<span class="pill">' + (diff >= 0 ? '▲ ' : '▼ ') + Math.abs(Math.round(diff)) + '% מ' + HEB_M[+prevM.split('-')[1] - 1] + '</span>'; }
+  const rev = ps.filter(p => p.review).length;
+  if (rev) cmp += '<span class="pill">' + rev + ' לבדיקה</span>';
+  $('mcompare').innerHTML = cmp || '<span class="pill">' + ps.length + ' רכישות</span>';
+  $('k-count').textContent = ps.length;
+  $('k-avg').textContent = ps.length ? ils(tot / ps.length) : '—';
+  const yr = M.slice(0, 4);
+  $('k-year').textContent = ils(sum(D.purchases.filter(p => p.month.startsWith(yr) && p.month <= M && spend(p)), p => p.total));
+
+  // עמודות חודשים
+  const totals = months.map(mm => sum(D.purchases.filter(p => p.month === mm && spend(p)), p => p.total));
+  const mx = Math.max(1, ...totals);
+  $('bars').innerHTML = months.map((mm, i) =>
+    '<div class="bar' + (i === cur ? ' on' : '') + '" data-i="' + i + '" title="' + ils(totals[i]) + '"><i style="height:' + Math.max(3, totals[i] / mx * 120) + 'px"></i><em>' + mShort(mm) + '</em></div>').join('');
+  document.querySelectorAll('.bar').forEach(b => b.onclick = () => { cur = +b.dataset.i; render(); });
+
+  // קטגוריות
+  const cats = groupSum(ps, p => p.category, p => p.total);
+  $('cats').innerHTML = cats.length ? cats.map(([c, v], i) => row(c, v, tot, COLORS[i % COLORS.length], 'cat')).join('') : '<div class="empty">אין רכישות בחודש הזה</div>';
+  const merch = groupSum(ps, p => p.merchant, p => p.total).slice(0, 8);
+  $('merch').innerHTML = merch.length ? merch.map(([c, v]) => row(c, v, tot, 'var(--c2)', 'merchant')).join('') : '<div class="empty">—</div>';
+  document.querySelectorAll('#cats .r, #merch .r').forEach(r => r.onclick = () => {
+    drill = r.dataset.k === 'cat' ? {cat: r.dataset.n, merchant: null} : {cat: null, merchant: r.dataset.n};
+    renderDrill(); show('drill');
+  });
+
+  // רשימת רכישות
+  $('list-title').textContent = 'רכישות ' + mName(M);
+  const all = D.purchases.filter(p => p.month === M).sort((a, b) => b.date.localeCompare(a.date));
+  $('plist').innerHTML = all.length ? all.map(purchaseRow).join('') : '<div class="empty">אין רכישות בחודש הזה</div>';
+  document.querySelectorAll('#plist .top').forEach(t => t.onclick = () => t.parentElement.classList.toggle('open'));
+}
+
+function row(name, val, tot, color, kind) {
+  const pct = tot ? Math.round(val / tot * 100) : 0;
+  return '<div class="r" data-k="' + (kind || '') + '" data-n="' + esc(name) + '"><div class="name"><span class="dot" style="background:' + color + '"></span>' + esc(name) + '</div>' +
+    '<div class="amt">' + ils(val) + '<span class="pct">' + pct + '%</span>' + (kind ? '<span class="chev">‹</span>' : '') + '</div>' +
+    '<div class="track"><b style="width:' + pct + '%;background:' + color + '"></b></div></div>';
+}
+
+function purchaseRow(p) {
+  const its = ITEMS_BY[p.id] || [];
+  const itemsHtml = its.length ? its.map(i =>
+    '<div class="it"><div>' + esc(i.name) + ' <span class="q">' + (i.unit === 'ק״ג' ? i.qty + ' ק״ג' : '×' + i.qty) + '</span></div><div>' + ils2(i.price) + '</div></div>').join('')
+    : '<div class="it"><div class="q">אין פירוט מוצרים לרכישה הזו</div></div>';
+  const link = p.link && /^https?:/.test(p.link) ? '<div class="it"><a href="' + esc(p.link) + '" target="_blank">למקור ←</a></div>' : '';
+  return '<div class="p"><div class="top"><div><div class="m">' + esc(p.merchant) +
+    (p.category === DON ? '<span class="tag">תרומה</span>' : '') + (p.review ? '<span class="tag warn">לבדיקה</span>' : '') + (p.refund === 'other' ? '<span class="tag warn">החזר – לא מקוזז' + (p.refundOf ? ' (קנייה מ־' + fmtDate(p.refundOf) + ')' : '') + '</span>' : '') +
+    '</div><div class="meta">' + fmtDate(p.date) + ' · ' + esc(p.category) + (its.length ? ' · ' + its.length + ' מוצרים' : '') + '</div></div>' +
+    '<div class="m">' + ils2(p.total) + (p.orig ? '<div class="meta">' + esc(p.orig) + '</div>' : '') + '</div></div><div class="items">' + itemsHtml + link + '</div></div>';
+}
+
+function renderDrill() {
+  const M = months[cur];
+  let ps = D.purchases.filter(p => p.month === M);
+  if (drill.cat) ps = ps.filter(p => (p.category || 'אחר') === drill.cat);
+  if (drill.merchant) ps = ps.filter(p => (p.merchant || 'אחר') === drill.merchant);
+  const tot = sum(ps.filter(counted), p => p.total);
+  $('dtitle').textContent = [drill.cat, drill.merchant].filter(Boolean).join(' › ');
+  $('dlabel').textContent = mName(M);
+  $('dtotal').textContent = ils(tot);
+  // מוצרים בקטגוריה (אם יש פירוט פריטים)
+  const its = [].concat(...ps.map(p => ITEMS_BY[p.id] || []));
+  $('dmeta').innerHTML = '<span class="pill">' + ps.length + ' רכישות</span>' + (its.length ? '<span class="pill">' + its.length + ' מוצרים</span>' : '');
+  const showMerch = !drill.merchant;
+  $('dmerch-card').style.display = showMerch ? '' : 'none';
+  if (showMerch) {
+    const ms = groupSum(ps.filter(counted), p => p.merchant, p => p.total);
+    $('dmerch').innerHTML = ms.map(([c, v]) => row(c, v, tot, 'var(--c2)', 'merchant')).join('') || '<div class="empty">—</div>';
+    document.querySelectorAll('#dmerch .r').forEach(r => r.onclick = () => { drill.merchant = r.dataset.n; renderDrill(); window.scrollTo(0, 0); });
+  }
+  $('dlistp').innerHTML = ps.sort((a, b) => b.date.localeCompare(a.date)).map(purchaseRow).join('') || '<div class="empty">אין רכישות</div>';
+  document.querySelectorAll('#dlistp .top').forEach(t => t.onclick = () => t.parentElement.classList.toggle('open'));
+}
+
+function setupSearch() {
+  const whos = ['ילדים', 'תינוקות', 'נשים', 'גברים', 'בית'];
+  $('who').innerHTML = '<span class="chip on" data-w="">כולם</span>' + whos.map(w => '<span class="chip" data-w="' + w + '">' + w + '</span>').join('');
+  const yrs = [...new Set(D.items.map(i => i.month.slice(0, 4)).filter(Boolean))].sort().reverse();
+  $('years').innerHTML = '<span class="chip on" data-y="">כל השנים</span>' + yrs.map(y => '<span class="chip" data-y="' + y + '">' + y + '</span>').join('');
+  $('who').onclick = e => { const c = e.target.closest('.chip'); if (!c) return; who = c.dataset.w; [...$('who').children].forEach(x => x.classList.toggle('on', x === c)); search(); };
+  $('years').onclick = e => { const c = e.target.closest('.chip'); if (!c) return; year = c.dataset.y; [...$('years').children].forEach(x => x.classList.toggle('on', x === c)); search(); };
+  $('q').oninput = search;
+  const top = groupSum(D.items.filter(i => i.category !== DON), i => i.norm, i => 1).slice(0, 18);
+  $('topitems').innerHTML = top.map(([n]) => '<span class="chip">' + esc(n) + '</span>').join('') || '<div class="empty">עדיין אין מוצרים</div>';
+  $('topitems').onclick = e => { const c = e.target.closest('.chip'); if (!c) return; $('q').value = c.textContent; search(); window.scrollTo({top: 0, behavior: 'smooth'}); };
+  search();
+}
+
+function search() {
+  const q = $('q').value.trim().toLowerCase();
+  if (!q) { $('sres').innerHTML = '<div class="empty">הקלד שם מוצר או בחר מהרשימה למטה</div>'; return; }
+  const hits = D.items.filter(i => ((i.norm || '').toLowerCase().includes(q) || (i.name || '').toLowerCase().includes(q)) &&
+    (!who || i.who === who) && (!year || i.month.startsWith(year)));
+  if (!hits.length) { $('sres').innerHTML = '<div class="empty">לא נמצאו רכישות של "' + esc(q) + '"</div>'; return; }
+  const kg = hits.every(i => i.unit === 'ק״ג');
+  const units = sum(hits, i => i.units || i.qty);
+  const byM = {}; hits.forEach(i => { const b = byM[i.month] || (byM[i.month] = {u: 0, p: 0, n: 0}); b.u += i.units || i.qty; b.p += i.price; b.n++; });
+  const ms = Object.keys(byM).sort().reverse();
+  const unitLbl = kg ? 'ק״ג' : 'יחידות';
+  $('sres').innerHTML =
+    '<div class="res-sum"><div><b>' + (Math.round(units * 100) / 100).toLocaleString('he-IL') + '</b><span>' + unitLbl + '</span></div>' +
+    '<div><b>' + ils(sum(hits, i => i.price)) + '</b><span>סה״כ שולם</span></div>' +
+    '<div><b>' + ils(sum(hits, i => i.price) / Math.max(1, ms.length)) + '</b><span>ממוצע לחודש</span></div></div>' +
+    '<table><tr><th>חודש</th><th>' + unitLbl + '</th><th>שולם</th></tr>' +
+    ms.map(m => '<tr><td>' + mName(m) + '</td><td class="n">' + (Math.round(byM[m].u * 100) / 100) + '</td><td class="n">' + ils2(byM[m].p) + '</td></tr>').join('') + '</table>' +
+    '<button class="more" id="showhits">הצגת כל ' + hits.length + ' הרכישות</button><div id="hitlist"></div>';
+  $('showhits').onclick = () => {
+    $('hitlist').innerHTML = '<table><tr><th>תאריך</th><th>מוצר</th><th>חנות</th><th>מחיר</th></tr>' +
+      hits.sort((a, b) => b.date.localeCompare(a.date)).map(i => '<tr><td class="n">' + fmtDate(i.date) + '</td><td>' + esc(i.name) + '</td><td>' + esc(i.merchant) + '</td><td class="n">' + ils2(i.price) + '</td></tr>').join('') + '</table>';
+    $('showhits').remove();
+  };
+}
+
+function renderDonations() {
+  const ds = D.donations.slice().sort((a, b) => b.date.localeCompare(a.date));
+  if (D.donationsFolder) $('dfolder').innerHTML = '<a href="' + esc(D.donationsFolder) + '" target="_blank">תיקיית הקבלות ←</a>';
+  const byY = groupSum(ds, d => d.year, d => d.total).sort((a, b) => b[0].localeCompare(a[0]));
+  $('dyears').innerHTML = byY.length ? byY.map(([y, v]) =>
+    '<div class="don"><div><b>' + y + '</b> <span class="sub">' + ds.filter(d => d.year === y).length + ' קבלות</span></div><div><b>' + ils(v) + '</b></div></div>').join('')
+    : '<div class="empty">עדיין לא נמצאו קבלות תרומה</div>';
+  $('dlist').innerHTML = ds.length ? ds.map(d =>
+    '<div class="don"><div>' + esc(d.org) + '<div class="sub">' + fmtDate(d.date) + (d.reported === 'כן' ? ' · דווח לרשות המסים' : '') + '</div></div>' +
+    '<div style="text-align:left"><b>' + ils2(d.total) + '</b>' + (d.file ? '<div><a href="' + esc(d.file) + '" target="_blank">קבלה</a></div>' : '') + '</div></div>').join('')
+    : '<div class="empty">—</div>';
+}
+
+// סריקת קבלה: צילום → הקטנה בטלפון → שליחה לתור של המשפחה (העיבוד קורה בשרת)
+function toast(t, ms) { const el = $('toast'); el.textContent = t; el.style.display = 'block'; clearTimeout(toast.t); if (ms) toast.t = setTimeout(() => el.style.display = 'none', ms); }
+function shrink(file, max = 1600) {
+  return new Promise((ok, bad) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      ok({ mime: 'image/jpeg', data: c.toDataURL('image/jpeg', 0.82).split(',')[1] });
+    };
+    img.onerror = () => bad(new Error('לא הצלחתי לקרוא את התמונה'));
+    img.src = url;
+  });
+}
+$('scanbtn').onclick = () => $('scanfile').click();
+$('scanfile').onchange = async e => {
+  const files = [...e.target.files].slice(0, 4); e.target.value = '';
+  if (!files.length) return;
+  try {
+    toast('מכין את התמונה…');
+    const images = await Promise.all(files.map(f => shrink(f)));
+    toast('שולח…');
+    const { data, error } = await SB.functions.invoke('scan', { body: { images } });
+    if (error || !data?.ok) throw new Error(error?.message || data?.error || 'שגיאה');
+    toast('✓ הקבלה התקבלה, תופיע כאן בעוד כדקה', 4000);
+    setTimeout(() => boot(), 75000);
+  } catch (err) { toast('השליחה נכשלה: ' + err.message, 6000); }
+};
+</script>
+</body>
+</html>
