@@ -120,7 +120,11 @@
   body{padding-top:env(safe-area-inset-top)}
 
 .fab{position:fixed;left:16px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:30;border:0;border-radius:28px;padding:14px 18px;font:inherit;font-weight:600;background:var(--c1);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25)}
-.toast{position:fixed;right:16px;left:16px;bottom:calc(140px + env(safe-area-inset-bottom));z-index:31;background:#222;color:#fff;padding:12px 14px;border-radius:12px;text-align:center;display:none}
+.fab2{position:fixed;left:16px;bottom:calc(136px + env(safe-area-inset-bottom));z-index:30;border:0;border-radius:50%;width:46px;height:46px;font-size:20px;background:#fff;color:var(--c1);box-shadow:0 4px 14px rgba(0,0,0,.22)}
+.stmt{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.stmt .sub{font-size:13px;opacity:.7}
+.stmt button{border:1px solid var(--c1);background:transparent;color:var(--c1);border-radius:10px;padding:8px 12px;font:inherit;white-space:nowrap}
+.toast{position:fixed;right:16px;left:16px;bottom:calc(196px + env(safe-area-inset-bottom));z-index:31;background:#222;color:#fff;padding:12px 14px;border-radius:12px;text-align:center;display:none}
 </style>
 </head>
 <body>
@@ -180,6 +184,7 @@
     <!-- רכישות -->
     <section class="view" id="v-list">
       <div class="card"><h2><span id="list-title">רכישות החודש</span><small>לחיצה פותחת פירוט</small></h2><div id="plist"></div></div>
+      <div class="card stmt"><div><b>דף פירוט מכרטיס אשראי</b><div class="sub">פעם בחודש: מורידים מאפליקציית האשראי (PDF / אקסל) ומעלים – כדי לתפוס גם קניות בלי קבלה</div></div><button id="stmtbtn">📄 העלאה</button></div>
     </section>
 
     <!-- חיפוש מוצר -->
@@ -223,6 +228,9 @@
 
 <button class="fab" id="scanbtn" style="display:none">📷 סריקת קבלה</button>
 <input type="file" id="scanfile" accept="image/*" capture="environment" multiple style="display:none">
+<button class="fab2" id="galbtn" style="display:none" title="קבלה מהגלריה">🖼️</button>
+<input type="file" id="galfile" accept="image/*" multiple style="display:none">
+<input type="file" id="stmtfile" accept=".pdf,.xlsx,.xls,.csv,application/pdf,image/*" style="display:none">
 <div class="toast" id="toast"></div>
 
 <nav class="tabs" id="tabs" style="display:none">
@@ -282,7 +290,7 @@ function load(json, fromCache) {
   $('updated').textContent = (fromCache ? 'מתעדכן… · ' : 'עודכן ') + new Date(FULL.updated).toLocaleString('he-IL', {day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit'});
   return true;
 }
-const screen = id => ['login', 'onboard', 'loading', 'app'].forEach(x => $(x).style.display = x === id ? '' : 'none') || ($('tabs').style.display = $('scanbtn').style.display = id === 'app' ? '' : 'none');
+const screen = id => ['login', 'onboard', 'loading', 'app'].forEach(x => $(x).style.display = x === id ? '' : 'none') || ($('tabs').style.display = $('scanbtn').style.display = $('galbtn').style.display = id === 'app' ? '' : 'none');
 function showLogin(msg) { screen('login'); $('lerr').textContent = msg || ''; }
 
 async function boot() {
@@ -534,7 +542,7 @@ function renderDonations() {
     : '<div class="empty">—</div>';
 }
 
-// סריקת קבלה: צילום → הקטנה בטלפון → שליחה לתור של המשפחה (העיבוד קורה בשרת)
+// סריקת קבלה (מצלמה / גלריה) והעלאת דף פירוט → התור של המשפחה (העיבוד קורה בשרת, בערך דקה)
 function toast(t, ms) { const el = $('toast'); el.textContent = t; el.style.display = 'block'; clearTimeout(toast.t); if (ms) toast.t = setTimeout(() => el.style.display = 'none', ms); }
 function shrink(file, max = 1600) {
   return new Promise((ok, bad) => {
@@ -549,19 +557,46 @@ function shrink(file, max = 1600) {
     img.src = url;
   });
 }
-$('scanbtn').onclick = () => $('scanfile').click();
-$('scanfile').onchange = async e => {
-  const files = [...e.target.files].slice(0, 4); e.target.value = '';
-  if (!files.length) return;
+const b64of = f => new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = () => bad(new Error('לא הצלחתי לקרוא את הקובץ')); r.readAsDataURL(f); });
+let XLSXlib = null;
+async function sheetText(f) {
+  if (/\.csv$/i.test(f.name)) return await f.text();
+  if (!XLSXlib) await new Promise((ok, bad) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'; sc.onload = ok; sc.onerror = () => bad(new Error('לא הצלחתי לטעון קורא אקסל')); document.head.appendChild(sc); }), XLSXlib = window.XLSX;
+  const wb = XLSXlib.read(await f.arrayBuffer(), { type: 'array' });
+  return wb.SheetNames.map(n => XLSXlib.utils.sheet_to_csv(wb.Sheets[n])).join('\n\n').slice(0, 60000);
+}
+async function queue(body) {
+  const { data, error } = await SB.functions.invoke('scan', { body });
+  if (error || !data?.ok) throw new Error(error?.message || data?.error || 'שגיאה');
+  if (!data.duplicate) setTimeout(() => boot(), 75000);
+  return data;
+}
+async function sendImages(fileList) {
+  const files = [...fileList].slice(0, 4); if (!files.length) return;
   try {
     toast('מכין את התמונה…');
     const images = await Promise.all(files.map(f => shrink(f)));
-    toast('שולח…');
-    const { data, error } = await SB.functions.invoke('scan', { body: { images } });
-    if (error || !data?.ok) throw new Error(error?.message || data?.error || 'שגיאה');
-    toast('✓ הקבלה התקבלה, תופיע כאן בעוד כדקה', 4000);
-    setTimeout(() => boot(), 75000);
+    toast('שולח…'); const d = await queue({ images });
+    toast(d.duplicate ? 'הקבלה הזו כבר נשלחה ✓' : '✓ הקבלה התקבלה, תופיע כאן בעוד כדקה', 4000);
   } catch (err) { toast('השליחה נכשלה: ' + err.message, 6000); }
+}
+$('scanbtn').onclick = () => $('scanfile').click();
+$('galbtn').onclick = () => $('galfile').click();
+$('scanfile').onchange = e => { const f = e.target.files; sendImages(f).then(() => e.target.value = ''); };
+$('galfile').onchange = e => { const f = e.target.files; sendImages(f).then(() => e.target.value = ''); };
+$('stmtbtn').onclick = () => $('stmtfile').click();
+$('stmtfile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    if (f.size > 8e6) throw new Error('הקובץ גדול מדי (עד 8MB)');
+    toast('קורא את הקובץ…');
+    let body;
+    if (/pdf/i.test(f.type) || /\.pdf$/i.test(f.name)) body = { kind: 'statement', files: [{ mime: 'application/pdf', data: await b64of(f) }] };
+    else if (/^image\//.test(f.type)) body = { kind: 'statement', images: [await shrink(f, 2200)] };
+    else body = { kind: 'statement', note: await sheetText(f) };
+    toast('שולח…'); const d = await queue(body);
+    toast(d.duplicate ? 'דף הפירוט הזה כבר הועלה ✓' : '✓ דף הפירוט התקבל – החיובים יופיעו בעוד כדקה', 5000);
+  } catch (err) { toast('ההעלאה נכשלה: ' + err.message, 6000); }
 };
 </script>
 </body>
