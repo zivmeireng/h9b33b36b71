@@ -127,8 +127,8 @@
 <div class="wrap">
   <div id="login" class="login" style="display:none">
     <h1>הוצאות הבית</h1><div class="sub" id="lsub">כניסה עם המייל שלך</div>
-    <form id="lform"><input id="email" type="email" autocomplete="email" placeholder="כתובת מייל" dir="ltr"><button>שליחת קוד כניסה</button></form>
-    <form id="cform" style="display:none"><input id="code" inputmode="numeric" autocomplete="one-time-code" placeholder="הקוד מהמייל" dir="ltr"><button>כניסה</button>
+    <form id="lform"><input id="email" type="email" autocomplete="email" placeholder="כתובת מייל" dir="ltr"><button>שליחת קישור כניסה</button></form>
+    <form id="cform" style="display:none"><input id="code" inputmode="numeric" autocomplete="one-time-code" placeholder="הקוד מהמייל" dir="ltr" style="display:none"><button style="display:none">כניסה</button>
       <button type="button" class="alt" id="cback">מייל אחר</button></form>
     <div class="err" id="lerr"></div>
   </div>
@@ -308,7 +308,7 @@ $('lform').onsubmit = async e => {
   $('lerr').textContent = 'שולח…';
   const { error } = await SB.auth.signInWithOtp({ email: pendingEmail, options: { emailRedirectTo: location.origin + location.pathname } });
   if (error) { $('lerr').textContent = error.message; return; }
-  $('lerr').textContent = ''; $('lsub').textContent = 'שלחנו קוד ל-' + pendingEmail; $('lform').style.display = 'none'; $('cform').style.display = '';
+  $('lerr').textContent = ''; $('lsub').textContent = 'שלחנו קישור ל-' + pendingEmail + ' – פותחים את המייל בטלפון הזה ולוחצים על הקישור'; $('lform').style.display = 'none'; $('cform').style.display = '';
 };
 $('cform').onsubmit = async e => {
   e.preventDefault();
