@@ -109,6 +109,10 @@
   .owners{display:flex;gap:6px;margin:0 2px 12px}
   .owners .chip{flex:1;text-align:center}
   body{padding-top:env(safe-area-inset-top)}
+
+.fab{position:fixed;left:16px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:30;border:0;border-radius:28px;padding:14px 18px;font:inherit;font-weight:600;background:var(--c1);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.toast{position:fixed;right:16px;left:16px;bottom:calc(140px + env(safe-area-inset-bottom));z-index:31;background:#222;color:#fff;padding:12px 14px;border-radius:12px;text-align:center;display:none}
+.toast button{margin:8px 6px 0;border:0;border-radius:10px;padding:8px 16px;font:inherit;background:#fff;color:#222}
 </style>
 </head>
 <body>
@@ -180,6 +184,10 @@
   </div>
 </div>
 
+<button class="fab" id="scanbtn" style="display:none">📷 סריקת קבלה</button>
+<input type="file" id="scanfile" accept="image/*" capture="environment" multiple style="display:none">
+<div class="toast" id="toast"></div>
+
 <nav class="tabs" id="tabs" style="display:none">
   <button class="on" data-v="home"><span>◔</span>סקירה</button>
   <button data-v="list"><span>☰</span>רכישות</button>
@@ -233,7 +241,7 @@ function load(json, fromCache) {
   return true;
 }
 function showLogin(msg) {
-  $('loading').style.display = 'none'; $('app').style.display = 'none'; $('tabs').style.display = 'none';
+  $('loading').style.display = 'none'; $('app').style.display = 'none'; $('tabs').style.display = 'none'; $('scanbtn').style.display = 'none';
   $('login').style.display = ''; $('lerr').textContent = msg || ''; $('pw').focus();
 }
 async function fetchData() {
@@ -278,7 +286,7 @@ function init() {
   $('next').onclick = () => { if (cur < months.length - 1) { cur++; render(); if (drill) renderDrill(); } };
   document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => show(b.dataset.v));
   setupSearch(); renderDonations();
-  $('loading').style.display = 'none'; $('app').style.display = ''; $('tabs').style.display = '';
+  $('loading').style.display = 'none'; $('app').style.display = ''; $('tabs').style.display = ''; $('scanbtn').style.display = '';
   render();
 }
 
@@ -433,6 +441,45 @@ function renderDonations() {
     '<div style="text-align:left"><b>' + ils2(d.total) + '</b>' + (d.file ? '<div><a href="' + esc(d.file) + '" target="_blank">קבלה</a></div>' : '') + '</div></div>').join('')
     : '<div class="empty">—</div>';
 }
+
+// סריקת קבלה: צילום → הקטנה בטלפון → שליחה (הסיסמה מאמתת, השרת מעביר לעיבוד)
+let scanOwner = '';
+function toast(t, ms) { const el = $('toast'); el.textContent = t; el.style.display = 'block'; clearTimeout(toast.t); if (ms) toast.t = setTimeout(() => el.style.display = 'none', ms); }
+function shrink(file, max = 1600) {
+  return new Promise((ok, bad) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      ok({ mime: 'image/jpeg', data: c.toDataURL('image/jpeg', 0.82).split(',')[1] });
+    };
+    img.onerror = () => bad(new Error('לא הצלחתי לקרוא את התמונה'));
+    img.src = url;
+  });
+}
+$('scanbtn').onclick = () => {
+  if (owner) { scanOwner = owner; return $('scanfile').click(); }
+  const names = [...new Set((FULL ? FULL.purchases : []).map(p => p.owner || 'זיו'))];
+  const el = $('toast'); clearTimeout(toast.t); el.style.display = 'block';
+  el.innerHTML = 'של מי הקבלה?<br>' + names.map(n => '<button data-o="' + esc(n) + '">' + esc(n) + '</button>').join('');
+  el.onclick = e => { const b = e.target.closest('button'); if (!b) return; el.onclick = null; el.style.display = 'none'; scanOwner = b.dataset.o; $('scanfile').click(); };
+};
+$('scanfile').onchange = async e => {
+  const files = [...e.target.files].slice(0, 4); e.target.value = '';
+  if (!files.length) return;
+  try {
+    toast('מכין את התמונה…');
+    const images = await Promise.all(files.map(f => shrink(f)));
+    toast('מעבד את הקבלה… (עד חצי דקה)');
+    const r = await fetch(API + '?scan=1', { method: 'POST', headers: { 'x-password': LS('exp_pw') || '', 'Content-Type': 'application/json' }, body: JSON.stringify({ owner: scanOwner, images }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.ok) throw new Error(j.error || (j.result && (j.result.error || j.result.raw)) || ('שגיאה ' + r.status));
+    const x = j.result || {};
+    toast(x.status === 'duplicate' ? 'הקבלה הזו כבר קיימת ✓' : x.status === 'review' ? 'נשמר לבדיקה – התמונה לא הייתה ברורה מספיק' : '✓ נשמר' + (x.merchant ? ': ' + x.merchant : '') + (x.total ? ' · ' + ils2(x.total) : ''), 5000);
+    setTimeout(fetchData, 3000);
+  } catch (err) { toast('השליחה נכשלה: ' + err.message, 6000); }
+};
 </script>
 </body>
 </html>
